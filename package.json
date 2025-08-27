@@ -1,0 +1,60 @@
+{
+  "package.json": {
+    "name": "simple-prerender-service",
+    "version": "1.0.0",
+    "description": "A simple Prerender.io alternative",
+    "main": "server.js",
+    "scripts": {
+      "start": "node server.js",
+      "dev": "nodemon server.js"
+    },
+    "dependencies": {
+      "express": "^4.18.2",
+      "puppeteer": "^21.0.0",
+      "node-cache": "^5.1.2",
+      "express-rate-limit": "^6.8.1",
+      "cors": "^2.8.5"
+    },
+    "devDependencies": {
+      "nodemon": "^3.0.1"
+    },
+    "engines": {
+      "node": ">=18.0.0"
+    }
+  },
+
+  "vercel.json": {
+    "version": 2,
+    "builds": [
+      {
+        "src": "server.js",
+        "use": "@vercel/node"
+      }
+    ],
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "server.js"
+      }
+    ],
+    "functions": {
+      "server.js": {
+        "maxDuration": 30
+      }
+    }
+  },
+
+  "railway.json": {
+    "build": {
+      "builder": "NIXPACKS"
+    },
+    "deploy": {
+      "startCommand": "npm start",
+      "healthcheckPath": "/health"
+    }
+  },
+
+  "netlify.toml": "[build]\n  command = \"npm install\"\n  functions = \"netlify/functions\"\n\n[build.environment]\n  NODE_VERSION = \"18\"\n\n[[redirects]]\n  from = \"/api/*\"\n  to = \"/.netlify/functions/server/:splat\"\n  status = 200",
+
+  "Dockerfile": "FROM node:18-alpine\n\n# Install Chromium\nRUN apk add --no-cache \\\n    chromium \\\n    nss \\\n    freetype \\\n    freetype-dev \\\n    harfbuzz \\\n    ca-certificates \\\n    ttf-freefont\n\n# Tell Puppeteer to skip installing Chromium\nENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \\\n    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser\n\nWORKDIR /app\n\nCOPY package*.json ./\nRUN npm ci --only=production\n\nCOPY . .\n\nEXPOSE 3000\n\nUSER node\n\nCMD [\"npm\", \"start\"]"
+}
